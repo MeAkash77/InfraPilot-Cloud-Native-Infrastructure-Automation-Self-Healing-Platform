@@ -168,7 +168,7 @@ CE is designed for a single team/organization. There is no multi-tenancy.
 A single container that embeds PostgreSQL, Redis, and the InfraPilot agent:
 
 ```bash
-git clone https://github.com/infrapilothq/InfraPilot.git
+git clone https://github.com/MeAkash77/InfraPilot-Cloud-Native-Infrastructure-Automation-Self-Healing-Platform.git
 cd InfraPilot
 
 # Set your JWT secret (required)
@@ -186,7 +186,7 @@ Then open **http://localhost** — you'll be prompted to create your admin accou
 Separate PostgreSQL, Redis, Nginx, Backend, Frontend, and Agent containers for easier upgrades and scaling:
 
 ```bash
-git clone https://github.com/infrapilothq/InfraPilot.git
+git clone https://github.com/MeAkash77/InfraPilot-Cloud-Native-Infrastructure-Automation-Self-Healing-Platform.git
 cd InfraPilot
 
 # Copy and configure environment
@@ -249,7 +249,7 @@ The **Agent** runs as a container, communicates with the Backend via gRPC, and i
 ## Development
 
 ```bash
-git clone https://github.com/infrapilothq/InfraPilot.git
+git clone https://github.com/MeAkash77/InfraPilot-Cloud-Native-Infrastructure-Automation-Self-Healing-Platform.git
 cd InfraPilot
 
 docker compose -f docker-compose.dev.yml up --build
