@@ -1,0 +1,179 @@
+# =============================================================
+# InfraPilot - Development Stack with Hot Reload
+# =============================================================
+#
+# Usage:
+#   docker compose -f docker-compose.dev.yml up
+#
+# Note: No ports exposed - services communicate within Docker network
+# For local dev with host access, use: ./scripts/dev.sh dev
+# =============================================================
+
+services:
+  # =============================================================
+  # PostgreSQL Database with TimescaleDB for nginx log analytics
+  # =============================================================
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: infrapilot-dev-postgres
+    environment:
+      POSTGRES_USER: infrapilot
+      POSTGRES_PASSWORD: infrapilot
+      POSTGRES_DB: infrapilot
+    # ports:
+    #   - "5432:5432"  # Uncomment if you need direct host access (e.g., database GUI)
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      # Migrations are run by the backend app, not initdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infrapilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - infrapilot-dev
+
+  # =============================================================
+  # Redis
+  # =============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: infrapilot-dev-redis
+    # ports:
+    #   - "6379:6379"  # Uncomment if you need direct host access
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - infrapilot-dev
+
+  # =============================================================
+  # Backend API (Hot Reload with Air)
+  # =============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: infrapilot-dev-backend
+    environment:
+      ENV: development
+      HTTP_PORT: 8080
+      GRPC_PORT: 9090
+      DATABASE_URL: postgres://infrapilot:infrapilot@infrapilot-dev-postgres:5432/infrapilot?sslmode=disable
+      REDIS_URL: redis://infrapilot-dev-redis:6379
+      JWT_SECRET: dev-secret-key-for-development-only-32chars
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost,http://localhost:3000,http://infrapilot.ce}
+    volumes:
+      - ./backend:/app
+      - go_mod_cache:/go/pkg/mod
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - infrapilot-dev
+      - infrapilot-edge
+
+  # =============================================================
+  # Frontend (Hot Reload with Next.js Dev Server)
+  # =============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: infrapilot-dev-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api/v1}
+      BACKEND_URL: http://backend:8080
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - infrapilot-dev
+      - infrapilot-edge
+
+  # =============================================================
+  # Agent (Hot Reload with Air)
+  # =============================================================
+  agent:
+    build:
+      context: ./agent
+      dockerfile: Dockerfile.dev
+    container_name: infrapilot-dev-agent
+    hostname: local-agent
+    environment:
+      # For development, we use a static agent ID
+      # In production/SaaS, remove AGENT_ID and set ENROLLMENT_TOKEN instead
+      AGENT_ID: "00000000-0000-0000-0000-000000000001"
+      # ENROLLMENT_TOKEN: "your-enrollment-token-here"
+      BACKEND_GRPC_ADDR: backend:9090
+      BACKEND_HTTP_URL: http://backend:8080
+      DATA_DIR: /var/lib/infrapilot-agent
+      LOG_PERSISTENCE: "true"
+      # Nginx log analytics - streams access logs to backend
+      NGINX_LOG_ANALYTICS: "true"
+      NGINX_ACCESS_LOG_PATH: /var/log/nginx/access.log
+    volumes:
+      - ./agent:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+      - go_mod_cache:/go/pkg/mod
+      - agent_dev_data:/var/lib/infrapilot-agent
+      # Mount nginx logs from the nginx container for analytics
+      - nginx_dev_logs:/var/log/nginx:ro
+    depends_on:
+      - backend
+      - nginx
+    networks:
+      - infrapilot-dev
+
+  # =============================================================
+  # Nginx - Managed by Agent for network attachments
+  # =============================================================
+  nginx:
+    image: nginx:stable-alpine
+    container_name: infrapilot-nginx
+    # No ports exposed - external nginx on host handles traffic
+    # This container is for agent to manage network attachments
+    # Remove default stdout symlinks and create actual log files for analytics
+    command: >
+      sh -c "rm -f /var/log/nginx/access.log /var/log/nginx/error.log &&
+             mkdir -p /var/log/nginx/domains &&
+             touch /var/log/nginx/access.log /var/log/nginx/error.log &&
+             chmod 644 /var/log/nginx/access.log /var/log/nginx/error.log &&
+             chmod 755 /var/log/nginx/domains &&
+             nginx -g 'daemon off;'"
+    volumes:
+      - ./deployments/nginx-dev.conf:/etc/nginx/nginx.conf:ro
+      - nginx_dev_conf:/etc/nginx/sites
+      - nginx_dev_certs:/etc/letsencrypt
+      - nginx_dev_logs:/var/log/nginx
+    networks:
+      - infrapilot-dev
+
+networks:
+  infrapilot-dev:
+    driver: bridge
+  # External shared network with the edge router (~/DX/InfraPilot/docker-compose.edge.yml).
+  # Create it once with: docker network create infrapilot-edge
+  infrapilot-edge:
+    external: true
+    name: infrapilot-edge
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+  go_mod_cache:
+  agent_dev_data:
+  nginx_dev_conf:
+  nginx_dev_certs:
+  nginx_dev_logs:

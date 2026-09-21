@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<meta name="description" content="InfraPilot — Infrastructure Control Plane & Self-Healing Runtime Automation Platform">
+<title>InfraPilot — Infrastructure Control Plane</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+:root{
+  --bg:#05070a;--panel:rgba(12,16,22,.72);--line:rgba(255,255,255,.09);
+  --text:#edf2f7;--muted:#8b98a8;--cyan:#65e6ff;--green:#69f0ae;
+  --amber:#ffd166;--red:#ff6577;--blue:#7aa7ff;--shadow:0 25px 90px rgba(0,0,0,.45)
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 70% 0%,#0b1821 0,#05070a 34%,#030406 100%);color:var(--text);font-family:Inter,system-ui,sans-serif;overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,black,transparent 80%)}
+a{color:inherit;text-decoration:none}.mono{font-family:"JetBrains Mono",monospace}.container{width:min(1180px,92vw);margin:auto}
+nav{position:fixed;z-index:50;top:14px;left:50%;transform:translateX(-50%);width:min(1180px,92vw);height:62px;padding:0 18px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);background:rgba(5,7,10,.62);backdrop-filter:blur(18px);border-radius:18px;box-shadow:var(--shadow)}
+.brand{font-weight:900;letter-spacing:-.04em}.brand i{display:inline-block;width:8px;height:8px;background:var(--cyan);box-shadow:0 0 18px var(--cyan);margin-right:8px;border-radius:50%}
+nav .links{display:flex;gap:22px;font-size:12px;color:#aeb8c4}.links a:hover{color:white}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.035);padding:12px 16px;border-radius:12px;font-weight:700;font-size:12px;transition:.25s;cursor:pointer;color:white}
+.btn:hover{transform:translateY(-2px);border-color:rgba(101,230,255,.45);box-shadow:0 12px 35px rgba(101,230,255,.08)}
+.btn.primary{background:linear-gradient(135deg,rgba(101,230,255,.18),rgba(105,240,174,.08));border-color:rgba(101,230,255,.3)}
+section{position:relative;padding:120px 0}.hero{min-height:100vh;padding-top:150px;display:flex;align-items:center;overflow:hidden}
+.hero-grid{display:grid;grid-template-columns:1fr 1.08fr;gap:34px;align-items:center}
+.eyebrow{font:600 11px "JetBrains Mono";letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;margin-bottom:18px}
+h1{font-size:clamp(48px,7vw,92px);line-height:.9;letter-spacing:-.075em;margin:0 0 28px;font-weight:900}
+h1 span{color:transparent;background:linear-gradient(100deg,#fff 15%,#65e6ff 48%,#69f0ae 85%);background-clip:text}
+.lead{max-width:620px;font-size:18px;line-height:1.65;color:#a8b2bf}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.hero-meta{display:flex;gap:18px;margin-top:34px;flex-wrap:wrap}.pill{font:500 10px "JetBrains Mono";color:#9ba8b7;padding:7px 9px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.025)}
+#scene{height:620px;border-radius:28px;border:1px solid var(--line);background:radial-gradient(circle at 50% 48%,rgba(45,107,130,.16),transparent 48%),rgba(0,0,0,.18);box-shadow:inset 0 0 100px rgba(101,230,255,.025),var(--shadow);overflow:hidden;position:relative}
+.scene-label{position:absolute;z-index:2;left:22px;top:20px;font:600 10px "JetBrains Mono";color:#708091;letter-spacing:.16em}
+.status{position:absolute;right:20px;top:18px;font:600 10px "JetBrains Mono";color:var(--green);display:flex;align-items:center;gap:7px}.status:before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 15px var(--green)}
+.kicker{text-align:center;color:var(--muted);font-size:14px;line-height:1.7;max-width:680px;margin:0 auto 45px}
+.section-head{margin-bottom:50px}.section-head h2{font-size:clamp(34px,5vw,62px);letter-spacing:-.055em;line-height:.98;margin:0 0 16px}.section-head p{color:var(--muted);max-width:700px;line-height:1.7}
+.center{text-align:center}.center .section-head p{margin:auto}
+.arch-wrap{border:1px solid var(--line);border-radius:24px;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));padding:28px;box-shadow:var(--shadow)}
+.arch{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;align-items:center}
+.arch .node{min-height:125px;padding:18px;border:1px solid var(--line);background:rgba(4,7,10,.82);border-radius:16px;position:relative;overflow:hidden}
+.node:after{content:"";position:absolute;inset:-60%;background:radial-gradient(circle,rgba(101,230,255,.08),transparent 55%);transform:translateX(-20%);pointer-events:none}
+.node b{display:block;font-size:13px;margin-bottom:9px}.node small{color:#748191;line-height:1.55;font-size:10px}
+.flow{height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);box-shadow:0 0 16px rgba(101,230,255,.35);position:relative}.flow:after{content:"";position:absolute;width:7px;height:7px;border-radius:50%;background:white;box-shadow:0 0 12px var(--cyan);top:50%;left:-2px;transform:translateY(-50%);animation:travel 2s linear infinite}
+@keyframes travel{to{left:100%}}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.card{border:1px solid var(--line);background:rgba(255,255,255,.025);padding:24px;border-radius:18px;min-height:210px}.card .num{font:600 10px "JetBrains Mono";color:var(--cyan)}.card h3{margin:16px 0 10px;font-size:20px}.card p{margin:0;color:var(--muted);line-height:1.7;font-size:13px}
+.sim{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}.terminal,.ops{border:1px solid var(--line);border-radius:20px;background:#070a0e;box-shadow:var(--shadow);overflow:hidden}.bar{height:42px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:7px;padding:0 14px}.dot{width:8px;height:8px;border-radius:50%;background:#33404e}.terminal-body{padding:22px;font:12px/2 "JetBrains Mono";min-height:360px}.cmd{color:#8d9aaa}.ok{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px}.metric{border:1px solid var(--line);border-radius:14px;padding:18px;background:rgba(255,255,255,.02)}.metric small{display:block;color:#687687;font:9px "JetBrains Mono";letter-spacing:.1em}.metric strong{display:block;margin-top:9px;font-size:27px}.chart{height:165px;margin:8px 18px 18px;border:1px solid var(--line);border-radius:14px;position:relative;overflow:hidden;background:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:30px 30px}.chart svg{width:100%;height:100%}.linepath{fill:none;stroke:var(--cyan);stroke-width:2;filter:drop-shadow(0 0 5px rgba(101,230,255,.6));stroke-dasharray:700;stroke-dashoffset:700;animation:draw 3.5s linear infinite}@keyframes draw{50%,100%{stroke-dashoffset:0}}
+.incident{border:1px solid var(--line);border-radius:24px;padding:28px;background:radial-gradient(circle at 50% 50%,rgba(255,101,119,.08),transparent 48%),rgba(255,255,255,.018);text-align:center}.incident h3{font-size:30px;margin:0 0 10px}.incident p{color:var(--muted);margin-bottom:24px}.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin:30px 0}.step{padding:15px 10px;border:1px solid var(--line);border-radius:12px;color:#758293;font:600 10px "JetBrains Mono";transition:.3s}.step.active{color:white;border-color:rgba(101,230,255,.4);box-shadow:0 0 30px rgba(101,230,255,.08);background:rgba(101,230,255,.05)}
+.stack{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;max-width:900px;margin:0 auto}.tech{padding:12px 15px;border:1px solid var(--line);border-radius:999px;background:rgba(255,255,255,.025);font:600 11px "JetBrains Mono";color:#b5c0cb;transition:.25s}.tech:hover{transform:translateY(-4px);border-color:rgba(101,230,255,.4);color:white}
+.principles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.principle{padding:22px;border:1px solid var(--line);border-radius:18px;background:rgba(255,255,255,.02)}.principle h4{margin:0 0 8px}.principle p{font-size:12px;line-height:1.65;color:var(--muted);margin:0}
+footer{padding:70px 0 45px;border-top:1px solid var(--line);text-align:center}.footer-title{font-size:clamp(35px,6vw,70px);font-weight:900;letter-spacing:-.06em;margin-bottom:20px}
+.reveal{opacity:0;transform:translateY(28px)}.smallnote{font-size:10px;color:#667484;margin-top:16px}.tag{color:var(--cyan)}
+@media(max-width:900px){nav .links{display:none}.hero-grid,.sim{grid-template-columns:1fr}.hero{padding-top:125px}.arch{grid-template-columns:1fr}.flow{display:none}.cards,.principles{grid-template-columns:1fr 1fr}#scene{height:520px}.pipeline{grid-template-columns:1fr}}
+@media(max-width:560px){section{padding:85px 0}.cards,.principles{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}h1{font-size:54px}}
+
+/* ---------- Interactive command center ---------- */
+.demo-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:16px}
+.panel{border:1px solid var(--line);border-radius:20px;background:rgba(7,10,14,.78);box-shadow:var(--shadow);overflow:hidden}
+.panel-head{height:50px;padding:0 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+.panel-head b{font-size:11px;letter-spacing:.08em}.panel-head span{font:600 9px "JetBrains Mono";color:#6f7d8d}
+.panel-body{padding:18px}
+.control-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.select-btn{font:600 10px "JetBrains Mono";color:#aab5c1;border:1px solid var(--line);background:#080c11;padding:9px 11px;border-radius:9px;cursor:pointer}
+.select-btn.active,.select-btn:hover{color:#fff;border-color:rgba(101,230,255,.42);background:rgba(101,230,255,.05)}
+.request-map{height:300px;position:relative;border:1px solid var(--line);border-radius:15px;background:radial-gradient(circle at 50% 50%,rgba(101,230,255,.06),transparent 50%),#05080c;overflow:hidden}
+.rnode{position:absolute;transform:translate(-50%,-50%);min-width:92px;text-align:center;padding:10px 8px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(5,8,12,.9);font:600 9px "JetBrains Mono";z-index:3}
+.rnode small{display:block;color:#647181;font-size:7px;margin-top:4px}
+.rnode.active{border-color:var(--cyan);box-shadow:0 0 24px rgba(101,230,255,.18)}
+.rline{position:absolute;height:1px;background:rgba(101,230,255,.25);transform-origin:left center;z-index:1}
+.packet{position:absolute;width:8px;height:8px;border-radius:50%;background:#fff;box-shadow:0 0 14px var(--cyan);z-index:4;opacity:0}
+.request-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.rstat{padding:11px;border:1px solid var(--line);border-radius:10px}.rstat small{font:8px "JetBrains Mono";color:#697687}.rstat strong{display:block;margin-top:6px;font-size:16px}
+.inspector{min-height:430px}.inspector-title{font-size:24px;margin:4px 0 8px}.inspector-desc{color:var(--muted);font-size:12px;line-height:1.7}.kv{display:grid;grid-template-columns:100px 1fr;gap:7px;margin-top:18px;font:10px "JetBrains Mono"}.kv span:nth-child(odd){color:#617080}.kv span:nth-child(even){color:#c1ccd6}
+.logbox{height:155px;overflow:hidden;border:1px solid var(--line);border-radius:12px;background:#030507;padding:13px;font:9px/1.9 "JetBrains Mono";margin-top:14px}.logline{color:#728090}.logline .good{color:var(--green)}.logline .blue{color:var(--cyan)}.logline .red{color:var(--red)}.logline .yellow{color:var(--amber)}
+.deploy-flow{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:20px 0}.dstep{padding:13px 5px;text-align:center;border:1px solid var(--line);border-radius:10px;color:#657282;font:600 8px "JetBrains Mono";transition:.3s}.dstep.on{color:#fff;border-color:rgba(105,240,174,.4);background:rgba(105,240,174,.04);box-shadow:0 0 22px rgba(105,240,174,.08)}
+.slider-wrap{display:grid;grid-template-columns:120px 1fr 80px;align-items:center;gap:12px;margin-top:18px}.slider-wrap label{font:600 9px "JetBrains Mono";color:#718090}.slider-wrap output{font:700 11px "JetBrains Mono";color:var(--cyan);text-align:right}
+input[type=range]{width:100%;accent-color:#65e6ff}
+.security-flow{display:flex;align-items:center;gap:6px;overflow:auto;padding-bottom:5px}.sec-node{min-width:105px;text-align:center;padding:15px 8px;border:1px solid var(--line);border-radius:12px;font:600 9px "JetBrains Mono";color:#778595}.sec-node.pass{border-color:rgba(105,240,174,.38);color:var(--green);background:rgba(105,240,174,.035)}.sec-arrow{color:#526171}
+.explain{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.explain div{padding:16px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.018)}.explain b{display:block;font-size:12px;margin-bottom:6px}.explain span{font-size:10px;color:#718090;line-height:1.55}
+.recruiter{border:1px solid rgba(101,230,255,.2);background:linear-gradient(120deg,rgba(101,230,255,.055),rgba(105,240,174,.025));border-radius:22px;padding:30px;display:grid;grid-template-columns:1fr auto;gap:30px;align-items:center}.recruiter h3{font-size:27px;margin:0 0 9px}.recruiter p{margin:0;color:#8794a2;line-height:1.7;font-size:13px}.scoreless{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.scoreless span{font:600 9px "JetBrains Mono";padding:8px 10px;border:1px solid var(--line);border-radius:999px;color:#a9b4bf}
+@media(max-width:900px){.demo-grid{grid-template-columns:1fr}.request-stats{grid-template-columns:1fr 1fr}.deploy-flow{grid-template-columns:repeat(4,1fr)}.recruiter{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="#"><i></i>INFRAPILOT</a>
+  <div class="links">
+    <a href="#architecture">Architecture</a><a href="#operations">Operations</a><a href="#recovery">Recovery</a><a href="#security">Security</a><a href="#stack">Stack</a>
+  </div>
+  <a class="btn" href="https://github.com/" target="_blank" rel="noreferrer">GitHub ↗</a>
+</nav>
+
+<main>
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="reveal">
+      <div class="eyebrow">Infrastructure Control Plane / Runtime Automation</div>
+      <h1>Infrastructure<br><span>that recovers.</span></h1>
+      <p class="lead">InfraPilot is an infrastructure control plane for deploying, configuring, observing and recovering containerized workloads through centralized automation, an agent-based runtime layer and developer self-service workflows.</p>
+      <div class="actions">
+        <a class="btn primary" href="#architecture">Explore Architecture ↓</a>
+        <a class="btn" href="#recovery">Simulate Failure</a>
+      </div>
+      <div class="hero-meta">
+        <span class="pill">GO</span><span class="pill">gRPC</span><span class="pill">DOCKER</span><span class="pill">NGINX</span><span class="pill">POSTGRESQL</span><span class="pill">REDIS</span>
+      </div>
+    </div>
+    <div id="scene" class="reveal">
+      <div class="scene-label">LIVE SYSTEM TOPOLOGY / DEMO</div><div class="status">SYSTEM OPERATIONAL</div>
+    </div>
+  </div>
+</section>
+
+<section id="architecture">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">01 / Architecture</div>
+    <h2>Inside the control plane.</h2>
+    <p>Requests move through explicit boundaries: browser → frontend → Go backend → gRPC → infrastructure agent → host runtime. The architecture keeps host-level operations behind a dedicated agent.</p>
+  </div>
+  <div class="arch-wrap reveal">
+    <div class="arch">
+      <div class="node"><b>Browser</b><small>Developer self-service<br>Operations UI</small></div><div class="flow"></div>
+      <div class="node"><b>Next.js UI</b><small>React / TypeScript<br>Real-time operations</small></div><div class="flow"></div>
+      <div class="node"><b>Go Backend</b><small>REST APIs<br>Orchestration / auth</small></div>
+    </div>
+    <div style="height:16px"></div>
+    <div class="arch">
+      <div class="node"><b>gRPC</b><small>Explicit service contract<br>Backend ↔ agent</small></div><div class="flow"></div>
+      <div class="node"><b>Infrastructure Agent</b><small>Docker / NGINX<br>Logs / runtime state</small></div><div class="flow"></div>
+      <div class="node"><b>Runtime</b><small>Containers<br>Reverse proxy / TLS</small></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="operations">
+<div class="container">
+  <div class="section-head reveal">
+    <div class="eyebrow">02 / Operations</div>
+    <h2>One surface for the runtime.</h2>
+    <p>Deployment, runtime state, traffic, logs and operational signals are brought together into one control-plane experience.</p>
+  </div>
+  <div class="sim">
+    <div class="terminal reveal">
+      <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="mono" style="margin-left:8px;color:#667484;font-size:10px">infrapilot / deployment</span></div>
+      <div class="terminal-body" id="terminal"></div>
+    </div>
+    <div class="ops reveal">
+      <div class="bar"><span class="mono" style="font-size:10px;color:#728092">OPERATIONS CENTER</span><span style="margin-left:auto" class="tag mono">● LIVE DEMO</span></div>
+      <div class="metrics">
+        <div class="metric"><small>REQUEST RATE</small><strong id="req">12.4K</strong></div>
+        <div class="metric"><small>HEALTH</small><strong>99.99%</strong></div>
+        <div class="metric"><small>ERROR RATE</small><strong>0.08%</strong></div>
+      </div>
+      <div class="chart"><svg viewBox="0 0 600 180" preserveAspectRatio="none"><path class="linepath" d="M0 132 C55 108,72 144,116 105 S186 125,230 73 S298 115,340 62 S410 94,455 45 S520 82,600 30"/></svg></div>
+    </div>
+  </div>
+  <div class="smallnote center">Telemetry values in this interactive UI are illustrative demo values, not claims of production traffic.</div>
+</div>
+</section>
+
+<section id="recovery">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">03 / Reliability</div>
+    <h2>Failure is an event.<br>Recovery is a workflow.</h2>
+    <p>Trigger the simulation to see a service move from healthy → failed → detected → remediated → verified.</p>
+  </div>
+  <div class="incident reveal">
+    <h3 id="incidentTitle">SYSTEM HEALTHY</h3>
+    <p id="incidentText">All runtime signals are nominal. Run the incident simulator.</p>
+    <button class="btn primary" id="simulate">▶ Simulate Failure</button>
+    <div class="pipeline">
+      <div class="step" data-step="0">01 DETECT</div><div class="step" data-step="1">02 ANALYZE</div><div class="step" data-step="2">03 REMEDIATE</div><div class="step" data-step="3">04 VERIFY</div><div class="step" data-step="4">05 RECOVER</div>
+    </div>
+    <div class="mono" id="incidentLog" style="font-size:11px;color:#6f7d8d">READY / waiting for incident</div>
+  </div>
+</div>
+</section>
+
+<section id="network">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">04 / Networking</div>
+    <h2>The network is part of the product.</h2>
+    <p>Visualize the edge-to-workload path: TLS, reverse proxying, routing, traffic controls and containerized services.</p>
+  </div>
+  <div class="arch-wrap reveal" style="padding:42px">
+    <div class="arch" style="grid-template-columns:repeat(5,1fr)">
+      <div class="node"><b>Internet</b><small>Client request</small></div><div class="flow"></div>
+      <div class="node"><b>NGINX</b><small>TLS / routing<br>security boundary</small></div><div class="flow"></div>
+      <div class="node"><b>Service</b><small>Containerized<br>application</small></div>
+    </div>
+    <div class="cards" style="margin-top:18px">
+      <div class="card"><span class="num">EDGE</span><h3>TLS & routing</h3><p>Reverse proxy and certificate automation provide a clear edge boundary before traffic reaches application workloads.</p></div>
+      <div class="card"><span class="num">TRAFFIC</span><h3>Operational signals</h3><p>Traffic analytics and runtime state give operators visibility into how services behave at the edge.</p></div>
+      <div class="card"><span class="num">RUNTIME</span><h3>Container isolation</h3><p>Host operations are mediated through the infrastructure agent instead of exposing the host runtime directly to the UI.</p></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="security">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">05 / Security</div>
+    <h2>Security at every boundary.</h2>
+    <p>Authentication, authorization and operational controls are part of the platform rather than an afterthought.</p>
+  </div>
+  <div class="principles reveal">
+    <div class="principle"><h4>JWT Authentication</h4><p>Token-based access control for authenticated API workflows.</p></div>
+    <div class="principle"><h4>RBAC</h4><p>Role-based permissions separate operator capabilities.</p></div>
+    <div class="principle"><h4>MFA</h4><p>TOTP-based multi-factor authentication strengthens account access.</p></div>
+    <div class="principle"><h4>Network Controls</h4><p>Rate limiting, IP allow/deny controls and security headers harden the boundary.</p></div>
+  </div>
+</div>
+</section>
+
+<section id="stack">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">06 / Technology</div>
+    <h2>The engineering stack.</h2>
+    <p>Technologies shown here are intentionally aligned with the implementation represented by the uploaded InfraPilot repository.</p>
+  </div>
+  <div class="stack reveal">
+    <span class="tech">Go</span><span class="tech">Next.js</span><span class="tech">React</span><span class="tech">TypeScript</span><span class="tech">gRPC</span><span class="tech">Protocol Buffers</span><span class="tech">Docker</span><span class="tech">NGINX</span><span class="tech">PostgreSQL</span><span class="tech">Redis</span><span class="tech">WebSockets</span><span class="tech">AWS / ECR</span><span class="tech">GitHub Actions</span><span class="tech">TLS</span><span class="tech">REST APIs</span>
+  </div>
+</div>
+</section>
+
+
+<section id="request-demo">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">08 / Live Request Simulator</div>
+    <h2>Follow a request through the system.</h2>
+    <p>Click a component to inspect its responsibility, protocol and boundary. Then send a request and watch the packet traverse the architecture.</p>
+  </div>
+  <div class="demo-grid">
+    <div class="panel reveal">
+      <div class="panel-head"><b>REQUEST PATH / LIVE</b><span id="reqState">READY</span></div>
+      <div class="panel-body">
+        <div class="control-row">
+          <button class="select-btn active" data-request="GET /api/services">GET /api/services</button>
+          <button class="select-btn" data-request="POST /deploy">POST /deploy</button>
+          <button class="select-btn" data-request="GET /metrics">GET /metrics</button>
+          <button class="btn primary" id="sendRequest" style="margin-left:auto;padding:9px 12px">SEND REQUEST</button>
+        </div>
+        <div class="request-map" id="requestMap">
+          <div class="rnode" data-node="browser" style="left:12%;top:50%">BROWSER<small>CLIENT</small></div>
+          <div class="rnode" data-node="nginx" style="left:32%;top:50%">NGINX<small>EDGE / TLS</small></div>
+          <div class="rnode" data-node="api" style="left:52%;top:50%">GO API<small>CONTROL PLANE</small></div>
+          <div class="rnode" data-node="agent" style="left:72%;top:30%">AGENT<small>gRPC</small></div>
+          <div class="rnode" data-node="runtime" style="left:88%;top:30%">RUNTIME<small>DOCKER</small></div>
+          <div class="rnode" data-node="data" style="left:72%;top:72%">DATA<small>POSTGRES / REDIS</small></div>
+          <div class="rline" style="left:17%;top:50%;width:15%;transform:rotate(0deg)"></div>
+          <div class="rline" style="left:37%;top:50%;width:15%;transform:rotate(0deg)"></div>
+          <div class="rline" style="left:57%;top:50%;width:16%;transform:rotate(-24deg)"></div>
+          <div class="rline" style="left:57%;top:50%;width:17%;transform:rotate(22deg)"></div>
+          <div class="rline" style="left:76%;top:30%;width:12%;transform:rotate(0deg)"></div>
+          <div class="packet" id="packet"></div>
+        </div>
+        <div class="request-stats">
+          <div class="rstat"><small>PROTOCOL</small><strong id="rProtocol">HTTPS</strong></div>
+          <div class="rstat"><small>ROUTE</small><strong id="rRoute">/api/services</strong></div>
+          <div class="rstat"><small>LATENCY</small><strong id="rLatency">—</strong></div>
+          <div class="rstat"><small>STATUS</small><strong id="rStatus">READY</strong></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel inspector reveal">
+      <div class="panel-head"><b>COMPONENT INSPECTOR</b><span>CLICK A NODE</span></div>
+      <div class="panel-body">
+        <div class="eyebrow" id="inspectorEyebrow">SYSTEM</div>
+        <div class="inspector-title" id="inspectorTitle">Control plane</div>
+        <div class="inspector-desc" id="inspectorDesc">Select a node to understand where it sits in the architecture and what responsibility it owns.</div>
+        <div class="kv" id="inspectorKV">
+          <span>ROLE</span><span>Orchestration</span><span>PROTOCOL</span><span>REST / gRPC</span><span>BOUNDARY</span><span>Control plane</span><span>RUNTIME</span><span>Go</span>
+        </div>
+        <div class="logbox" id="requestLog">
+          <div class="logline"><span class="blue">READY</span> waiting for request...</div>
+          <div class="logline">tip: click a node or send a request</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="deployment-demo">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">09 / Deployment Simulator</div>
+    <h2>From intent to live traffic.</h2>
+    <p>See the conceptual deployment workflow as infrastructure intent moves through build, publish, runtime configuration and health verification.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-head"><b>DEPLOYMENT / checkout-api:v2.4</b><span id="deployState">READY</span></div>
+    <div class="panel-body">
+      <button class="btn primary" id="deployBtn">▶ Deploy v2.4</button>
+      <div class="deploy-flow">
+        <div class="dstep" data-deploy="0">SOURCE</div><div class="dstep" data-deploy="1">BUILD</div><div class="dstep" data-deploy="2">IMAGE</div><div class="dstep" data-deploy="3">REGISTRY</div><div class="dstep" data-deploy="4">RUNTIME</div><div class="dstep" data-deploy="5">HEALTH</div><div class="dstep" data-deploy="6">TRAFFIC</div>
+      </div>
+      <div class="logbox" id="deployLog"><div class="logline"><span class="blue">READY</span> deployment workflow idle.</div></div>
+      <div class="slider-wrap"><label>REQUEST LOAD</label><input id="loadSlider" type="range" min="10" max="100" value="48"><output id="loadOut">48%</output></div>
+      <div class="slider-wrap"><label>INSTANCES</label><input id="instanceSlider" type="range" min="1" max="6" value="2"><output id="instanceOut">2 containers</output></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="observability-demo">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">10 / Observability Correlation</div>
+    <h2>One incident. Three signals. One recovery.</h2>
+    <p>When an incident occurs, a platform engineer needs the metric, log and event context together. This demo correlates those signals.</p>
+  </div>
+  <div class="demo-grid">
+    <div class="panel reveal">
+      <div class="panel-head"><b>INCIDENT TIMELINE</b><span>DEMO TELEMETRY</span></div>
+      <div class="panel-body">
+        <div class="chart" style="height:230px;margin:0"><svg viewBox="0 0 600 230" preserveAspectRatio="none">
+          <path d="M0 175 C65 170,80 165,125 168 S190 170,230 165 S290 168,330 162 S385 170,420 65 S470 90,520 145 S560 160,600 150" fill="none" stroke="#ff6577" stroke-width="2" stroke-dasharray="700" stroke-dashoffset="0"/>
+          <path d="M0 185 C90 180,150 178,220 180 S320 176,390 181 S500 175,600 180" fill="none" stroke="#65e6ff" stroke-width="1.5" opacity=".55"/>
+        </svg></div>
+        <div class="explain">
+          <div><b>METRIC</b><span>Health signal crosses the failure threshold.</span></div>
+          <div><b>LOG</b><span>Runtime reports an unhealthy container state.</span></div>
+          <div><b>EVENT</b><span>Recovery workflow is dispatched to the agent.</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="panel reveal">
+      <div class="panel-head"><b>EVENT STREAM</b><span id="obsState">CORRELATED</span></div>
+      <div class="panel-body">
+        <div class="logbox" style="height:310px;margin:0" id="obsLog">
+          <div class="logline">12:42:01 <span class="blue">METRIC</span> health=healthy</div>
+          <div class="logline">12:42:03 <span class="yellow">WARN</span> latency threshold crossed</div>
+          <div class="logline">12:42:04 <span class="red">ALERT</span> service unhealthy</div>
+          <div class="logline">12:42:05 <span class="blue">EVENT</span> recovery workflow queued</div>
+          <div class="logline">12:42:06 <span class="blue">AGENT</span> remediation command received</div>
+          <div class="logline">12:42:08 <span class="good">VERIFY</span> health check passed</div>
+          <div class="logline">12:42:09 <span class="good">RECOVER</span> traffic restored</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="security-demo">
+<div class="container">
+  <div class="section-head center reveal">
+    <div class="eyebrow">11 / Security Request Path</div>
+    <h2>Authorization is a pipeline.</h2>
+    <p>Click “Authorize” to walk a request through the conceptual security boundaries.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-body">
+      <div class="security-flow">
+        <div class="sec-node" data-sec="0">CLIENT</div><div class="sec-arrow">→</div>
+        <div class="sec-node" data-sec="1">JWT</div><div class="sec-arrow">→</div>
+        <div class="sec-node" data-sec="2">RBAC</div><div class="sec-arrow">→</div>
+        <div class="sec-node" data-sec="3">MFA</div><div class="sec-arrow">→</div>
+        <div class="sec-node" data-sec="4">RATE LIMIT</div><div class="sec-arrow">→</div>
+        <div class="sec-node" data-sec="5">API</div>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px;align-items:center">
+        <button class="btn primary" id="authBtn">Authorize Request</button>
+        <span class="mono" id="authState" style="font-size:10px;color:#667484">WAITING</span>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section id="recruiter-mode">
+<div class="container">
+  <div class="recruiter reveal">
+    <div>
+      <div class="eyebrow">12 / Recruiter Mode</div>
+      <h3>Understand the project in 60 seconds.</h3>
+      <p>InfraPilot demonstrates a control-plane architecture, agent-based host isolation, infrastructure automation, networking, runtime observability, security boundaries and recovery workflows.</p>
+      <div class="scoreless"><span>Distributed Systems</span><span>Infrastructure</span><span>Networking</span><span>Reliability</span><span>Security</span><span>Developer Tooling</span></div>
+    </div>
+    <button class="btn primary" id="tourBtn">▶ Start Guided Tour</button>
+  </div>
+</div>
+</section>
+
+<section id="engineering">
+<div class="container">
+  <div class="section-head reveal">
+    <div class="eyebrow">07 / Engineering</div>
+    <h2>Built around hard infrastructure problems.</h2>
+  </div>
+  <div class="cards">
+    <div class="card reveal"><span class="num">01</span><h3>Host isolation</h3><p>Separate the control plane from host-level Docker and NGINX operations using a dedicated infrastructure agent.</p></div>
+    <div class="card reveal"><span class="num">02</span><h3>Remote orchestration</h3><p>Use explicit gRPC contracts to turn higher-level deployment intent into controlled runtime operations.</p></div>
+    <div class="card reveal"><span class="num">03</span><h3>Real-time operations</h3><p>Surface logs, deployment state and operational events through a unified dashboard experience.</p></div>
+    <div class="card reveal"><span class="num">04</span><h3>Safe delivery</h3><p>Model deployment as a workflow: prepare → execute → validate → expose traffic, with rollback paths.</p></div>
+    <div class="card reveal"><span class="num">05</span><h3>Developer self-service</h3><p>Expose infrastructure capabilities through a product-like interface rather than requiring manual host administration.</p></div>
+    <div class="card reveal"><span class="num">06</span><h3>Operational security</h3><p>Combine authentication, RBAC, MFA, network controls and security headers at the platform boundary.</p></div>
+  </div>
+</div>
+</section>
+
+<footer>
+<div class="container">
+  <div class="eyebrow">InfraPilot</div>
+  <div class="footer-title">Infrastructure should<br>disappear when it works.</div>
+  <p class="kicker">A cloud-native infrastructure control plane concept focused on automation, networking, observability, security and reliable runtime operations.</p>
+  <div class="actions" style="justify-content:center">
+    <a class="btn primary" href="https://github.com/" target="_blank" rel="noreferrer">View Source ↗</a>
+    <a class="btn" href="#architecture">Back to Architecture ↑</a>
+  </div>
+  <div class="smallnote">InfraPilot interactive portfolio demo · Replace the GitHub URL above with your repository URL.</div>
+</div>
+</footer>
+</main>
+
+<script>
+/* ---------- Three.js infrastructure topology ---------- */
+const host=document.getElementById('scene');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(48,host.clientWidth/host.clientHeight,.1,100);
+camera.position.set(0,1.3,9);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.setSize(host.clientWidth,host.clientHeight); host.appendChild(renderer.domElement);
+
+const group=new THREE.Group(); scene.add(group);
+const cyan=0x65e6ff, green=0x69f0ae, blue=0x7aa7ff, red=0xff6577;
+const nodes=[
+ {p:new THREE.Vector3(0,0,0),s:.75,c:cyan,label:'CONTROL'},
+ {p:new THREE.Vector3(-2.9,1.3,-.2),s:.38,c:blue,label:'UI'},
+ {p:new THREE.Vector3(2.9,1.35,-.1),s:.38,c:green,label:'API'},
+ {p:new THREE.Vector3(-2.7,-1.35,.1),s:.42,c:cyan,label:'AGENT'},
+ {p:new THREE.Vector3(2.75,-1.3,.1),s:.42,c:blue,label:'DATA'},
+ {p:new THREE.Vector3(0,-2.35,-.2),s:.38,c:green,label:'RUNTIME'}
+];
+const meshes=[];
+function makeNode(n){
+ const g=new THREE.Group(); g.position.copy(n.p);
+ const geo=new THREE.IcosahedronGeometry(n.s,2);
+ const mat=new THREE.MeshBasicMaterial({color:n.c,wireframe:true,transparent:true,opacity:.9});
+ const m=new THREE.Mesh(geo,mat); g.add(m);
+ const glow=new THREE.Mesh(new THREE.SphereGeometry(n.s*.45,16,16),new THREE.MeshBasicMaterial({color:n.c,transparent:true,opacity:.18}));
+ g.add(glow); group.add(g); meshes.push({g,m,n});
+}
+nodes.forEach(makeNode);
+function link(a,b){
+ const pts=[nodes[a].p,nodes[b].p], curve=new THREE.CatmullRomCurve3(pts);
+ const geom=new THREE.BufferGeometry().setFromPoints(curve.getPoints(40));
+ const mat=new THREE.LineBasicMaterial({color:0x2d7182,transparent:true,opacity:.65});
+ group.add(new THREE.Line(geom,mat));
+ return curve;
+}
+const curves=[[0,1],[0,2],[0,3],[0,4],[3,5],[4,5]].map(x=>link(...x));
+const particles=[];
+curves.forEach((curve,i)=>{
+ for(let j=0;j<3;j++){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(.045,8,8),new THREE.MeshBasicMaterial({color:i%2?green:cyan}));
+  group.add(m); particles.push({m,curve,t:(j/3),speed:.0018+(i%3)*.0004});
+ }
+});
+const stars=new THREE.Points(
+ new THREE.BufferGeometry(),
+ new THREE.PointsMaterial({color:0x6a8290,size:.025,transparent:true,opacity:.7})
+);
+const pos=[]; for(let i=0;i<550;i++){pos.push((Math.random()-.5)*12,(Math.random()-.5)*9,(Math.random()-.5)*7)}
+stars.geometry.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); scene.add(stars);
+function resize(){camera.aspect=host.clientWidth/host.clientHeight;camera.updateProjectionMatrix();renderer.setSize(host.clientWidth,host.clientHeight)}
+addEventListener('resize',resize);
+function animate(){
+ requestAnimationFrame(animate); group.rotation.y+=.0015; stars.rotation.y-=.0002;
+ meshes.forEach((x,i)=>{x.m.rotation.x+=.004+i*.0002;x.m.rotation.y+=.005});
+ particles.forEach(p=>{p.t=(p.t+p.speed)%1;p.m.position.copy(p.curve.getPoint(p.t))});
+ renderer.render(scene,camera);
+}
+animate();
+
+/* ---------- Reveal animations ---------- */
+const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){gsap.to(e.target,{opacity:1,y:0,duration:.75,ease:'power3.out'});obs.unobserve(e.target)}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(e=>obs.observe(e));
+
+/* ---------- Terminal simulation ---------- */
+const terminal=document.getElementById('terminal');
+const lines=[
+ ['cmd','$ infrapilot deploy checkout-api','cmd'],
+ ['','→ resolving deployment intent',''],
+ ['','→ pulling container image',''],
+ ['','→ configuring runtime',''],
+ ['','→ updating reverse proxy',''],
+ ['','→ running health checks',''],
+ ['','✓ deployment successful','ok'],
+ ['','$ infrapilot status checkout-api','cmd'],
+ ['','STATUS     HEALTHY','ok'],
+ ['','ROUTE      ACTIVE','ok'],
+ ['','RUNTIME    CONTAINERIZED','ok']
+];
+let ti=0;
+function terminalTick(){
+ if(ti<lines.length){
+  const [a,b,c]=lines[ti++]; const div=document.createElement('div'); div.className=c; div.textContent=(a? a+' ':'')+b; terminal.appendChild(div); terminal.scrollTop=terminal.scrollHeight;
+  setTimeout(terminalTick,ti<7?420:260);
+ } else setTimeout(()=>{terminal.innerHTML='';ti=0;terminalTick()},5000);
+}
+terminalTick();
+
+/* ---------- Incident simulator ---------- */
+const title=document.getElementById('incidentTitle'), text=document.getElementById('incidentText'), log=document.getElementById('incidentLog'), button=document.getElementById('simulate'), steps=[...document.querySelectorAll('.step')];
+let running=false;
+const phases=[
+ ['SERVICE FAILURE DETECTED','A runtime health signal has crossed the failure threshold.','INCIDENT / service unavailable','bad'],
+ ['ANALYZING FAILURE','Control plane evaluates runtime state and prepares a bounded recovery action.','ANALYSIS / runtime state inspected','warn'],
+ ['REMEDIATION STARTED','Recovery workflow is executing against the affected runtime.','REMEDIATION / action dispatched','warn'],
+ ['HEALTH CHECK PASSED','The workload is responding again and the runtime is being verified.','VERIFY / health check passed','ok'],
+ ['INCIDENT RESOLVED','Service recovered and traffic can return to the healthy path.','RECOVER / incident closed','ok']
+];
+button.onclick=async()=>{
+ if(running)return; running=true; button.disabled=true; button.textContent='● Simulation Running';
+ steps.forEach(s=>s.classList.remove('active'));
+ for(let i=0;i<phases.length;i++){
+  const [t,d,l,c]=phases[i]; title.textContent=t;text.textContent=d;log.textContent=l;log.className='mono '+c;
+  if(steps[i])steps[i].classList.add('active');
+  await new Promise(r=>setTimeout(r,1100));
+ }
+ button.disabled=false;button.textContent='↻ Run Again';running=false;
+};
+
+/* subtle hero mouse parallax */
+host.addEventListener('pointermove',e=>{
+ const r=host.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+ gsap.to(group.rotation,{x:y*.08,y:x*.12,duration:.8,ease:'power2.out'});
+});
+
+/* ---------- Live request simulator ---------- */
+const nodeInfo={
+ browser:{ey:'CLIENT',title:'Browser',desc:'The developer-facing entry point for self-service infrastructure operations.',kv:['ROLE','Client','PROTOCOL','HTTPS','BOUNDARY','External / edge','RUNTIME','Browser']},
+ nginx:{ey:'EDGE',title:'NGINX',desc:'Reverse proxy and traffic boundary for routing, TLS and security controls.',kv:['ROLE','Reverse proxy','PROTOCOL','HTTP / HTTPS','BOUNDARY','Edge','RUNTIME','NGINX']},
+ api:{ey:'CONTROL PLANE',title:'Go Backend',desc:'Central orchestration layer responsible for APIs, authentication, deployments and coordination.',kv:['ROLE','Orchestration','PROTOCOL','REST / gRPC','BOUNDARY','Control plane','RUNTIME','Go']},
+ agent:{ey:'RUNTIME CONTROL',title:'Infrastructure Agent',desc:'Host-side execution boundary that translates control-plane intent into Docker and NGINX operations.',kv:['ROLE','Host agent','PROTOCOL','gRPC','BOUNDARY','Managed host','RUNTIME','Go']},
+ runtime:{ey:'WORKLOAD',title:'Docker Runtime',desc:'Container runtime where application workloads are created, started, inspected and managed.',kv:['ROLE','Runtime','PROTOCOL','Docker API','BOUNDARY','Host','RUNTIME','Docker']},
+ data:{ey:'STATE',title:'PostgreSQL / Redis',desc:'Persistent and fast-access state used by the control plane for platform workflows.',kv:['ROLE','State','PROTOCOL','SQL / Redis','BOUNDARY','Data plane','RUNTIME','PostgreSQL / Redis']}
+};
+document.querySelectorAll('.rnode').forEach(n=>n.addEventListener('click',()=>{
+ const d=nodeInfo[n.dataset.node]; document.getElementById('inspectorEyebrow').textContent=d.ey;document.getElementById('inspectorTitle').textContent=d.title;document.getElementById('inspectorDesc').textContent=d.desc;
+ document.getElementById('inspectorKV').innerHTML=d.kv.map(x=>`<span>${x}</span>`).join('');
+ document.querySelectorAll('.rnode').forEach(x=>x.classList.remove('active'));n.classList.add('active');
+}));
+let selectedRoute='GET /api/services';
+document.querySelectorAll('[data-request]').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('[data-request]').forEach(x=>x.classList.remove('active'));b.classList.add('active');selectedRoute=b.dataset.request;}));
+function addReqLog(msg,cls=''){const box=document.getElementById('requestLog');const d=document.createElement('div');d.className='logline';d.innerHTML=msg;box.appendChild(d);box.scrollTop=box.scrollHeight;}
+document.getElementById('sendRequest').addEventListener('click',async()=>{
+ const packet=document.getElementById('packet'), map=document.getElementById('requestMap');
+ const names=['browser','nginx','api','agent','runtime']; const els=names.map(n=>document.querySelector(`[data-node="${n}"]`));
+ document.getElementById('reqState').textContent='TRANSMITTING'; document.getElementById('rRoute').textContent=selectedRoute.split(' ')[1]||'/'; document.getElementById('rStatus').textContent='RUNNING'; addReqLog(`<span class="blue">REQUEST</span> ${selectedRoute}`);
+ packet.style.opacity=1;
+ for(let i=0;i<els.length;i++){
+  const e=els[i], mr=map.getBoundingClientRect(), er=e.getBoundingClientRect();
+  const x=er.left-mr.left+er.width/2-4,y=er.top-mr.top+er.height/2-4;
+  document.querySelectorAll('.rnode').forEach(x=>x.classList.remove('active'));e.classList.add('active');
+  await gsap.to(packet,{left:x,top:y,duration:.55,ease:'power1.inOut'}); addReqLog(`<span class="good">✓</span> ${e.textContent.split('\\n')[0].trim()} reached`);
+ }
+ document.getElementById('rLatency').textContent=(31+Math.floor(Math.random()*22))+'ms';document.getElementById('rStatus').textContent='200 OK';document.getElementById('reqState').textContent='COMPLETE';packet.style.opacity=0;
+});
+/* ---------- Deployment simulator ---------- */
+document.getElementById('deployBtn').addEventListener('click',async()=>{
+ const btn=document.getElementById('deployBtn'), state=document.getElementById('deployState'), box=document.getElementById('deployLog'), steps=[...document.querySelectorAll('.dstep')];
+ btn.disabled=true;btn.textContent='● Deploying';state.textContent='RUNNING';steps.forEach(s=>s.classList.remove('on'));box.innerHTML='';
+ const msgs=['source revision resolved','build completed','container image created','image published','runtime configured','health check passed','traffic enabled'];
+ for(let i=0;i<steps.length;i++){steps[i].classList.add('on');const d=document.createElement('div');d.className='logline';d.innerHTML=`${new Date().toLocaleTimeString()} <span class="blue">${String(i+1).padStart(2,'0')}</span> ${msgs[i]}`;box.appendChild(d);await new Promise(r=>setTimeout(r,520));}
+ const d=document.createElement('div');d.className='logline';d.innerHTML='<span class="good">✓ DEPLOYMENT SUCCESSFUL</span> checkout-api:v2.4 is healthy';box.appendChild(d);state.textContent='HEALTHY';btn.disabled=false;btn.textContent='↻ Deploy Again';
+});
+document.getElementById('loadSlider').addEventListener('input',e=>document.getElementById('loadOut').textContent=e.target.value+'%');
+document.getElementById('instanceSlider').addEventListener('input',e=>document.getElementById('instanceOut').textContent=e.target.value+' container'+(e.target.value==1?'':'s'));
+/* ---------- Security pipeline ---------- */
+document.getElementById('authBtn').addEventListener('click',async()=>{
+ const nodes=[...document.querySelectorAll('.sec-node')], state=document.getElementById('authState'), btn=document.getElementById('authBtn');
+ btn.disabled=true;state.textContent='VALIDATING';nodes.forEach(n=>n.classList.remove('pass'));
+ for(let i=0;i<nodes.length;i++){await new Promise(r=>setTimeout(r,380));nodes[i].classList.add('pass');state.textContent=nodes[i].textContent+' ✓';}
+ state.textContent='AUTHORIZED ✓';btn.disabled=false;
+});
+/* ---------- Guided recruiter tour ---------- */
+document.getElementById('tourBtn').addEventListener('click',async()=>{
+ const tour=[['#architecture','Architecture: control plane + agent separation.'],['#request-demo','Request flow: browser → edge → Go → gRPC → runtime.'],['#deployment-demo','Deployment: intent → image → runtime → health → traffic.'],['#observability-demo','Observability: metric + log + event correlation.'],['#recovery','Reliability: bounded recovery workflow.'],['#security-demo','Security: JWT → RBAC → MFA → rate limiting.']];
+ const btn=document.getElementById('tourBtn');btn.disabled=true;btn.textContent='● Tour Running';
+ for(const [sel,msg] of tour){document.querySelector(sel).scrollIntoView({behavior:'smooth',block:'center'});await new Promise(r=>setTimeout(r,1700));}
+ btn.disabled=false;btn.textContent='↻ Run Tour Again';
+});
+
+</script>
+</body>
+</html>

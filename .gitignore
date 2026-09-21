@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+/backend/server
+/agent/agent
+.next/
+out/
+
+# Environment files
+.env
+.developer.env
+.env.prod
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+!frontend/app/**/logs/
+
+# Testing
+coverage/
+*.cover
+*.out
+
+# Generated files
+*.pb.go
+*.tsbuildinfo
+
+# Docker volumes (local dev)
+postgres_data/
+redis_data/
+
+# Persistent data directory (production)
+data/
+
+# Certificates (production)
+*.pem
+*.key
+*.crt
+agent/tmp
+backend/tmp
+
+# docsx
+*storybook.log
+storybook-static
+.dev-logs.env.prod
+
+# Backup files
+*.bak
+*.orig
+
+DEV-PROD-SETUP.md
+.dev-logs
